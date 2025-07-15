@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>Poker Tracker</title>
+<style>
+  body { background: #121212; color: #e0e0e0; font-family: sans-serif; padding:20px; }
+  h1 { color: #ffcc00; }
+  .section { margin-bottom:20px; border-bottom:1px solid #333; padding-bottom:10px; }
+  button,input,select{ background:#1e1e1e; color:#fff; border:1px solid #555; padding:5px; margin:2px; border-radius:4px;}
+  table{ width:100%; border-collapse:collapse; margin-top:10px;}
+  th,td{ border:1px solid #444; padding:6px; text-align:center;}
+  .card-btn{width:30px!important;}
+</style>
+</head>
+<body>
+<h1>♠ Poker Tracker – Działa! ♠</h1>
+
+<div class="section">
+  <h2>👥 Gracze</h2>
+  <input id="playerName" placeholder="Imię gracza">
+  <input id="playerChips" type="number" placeholder="Żetony">
+  <button onclick="addPlayer()">➕ Dodaj</button>
+  <table id="playersTable"><tr><th>#</th><th>Imię</th><th>Żetony</th><th>Akcje</th></tr></table>
+</div>
+
+<div class="section">
+  <h2>🃏 Rozdaj kartę</h2>
+  <select id="cardSelect"></select>
+  <select id="assignTo">
+    <option value="board">Stół</option>
+  </select>
+  <button onclick="dealCard()">🎴 Rozdaj</button>
+  <div id="boardCards">Karty na stole:</div>
+  <ul id="playerHands"></ul>
+</div>
+
+<div class="section">
+  <h2>📋 Runda</h2>
+  <input id="roundDesc" placeholder="Opis rundy">
+  <button onclick="saveRound()">✅ Zapisz rundę</button>
+</div>
+
+<div class="section">
+  <h2>📜 Historia</h2>
+  <ul id="roundHistory"></ul>
+</div>
+
+<script>
+let players = [];
+let board = [];
+let rounds = [];
+let deck = [];
+
+function initDeck(){
+  const suits = ['♠','♥','♦','♣'];
+  const ranks = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+  deck = suits.flatMap(s=>ranks.map(r=>r+s));
+  deck = deck.concat(['Joker','Joker']); // dwa jokery
+  updateCardSelect();
+}
+function updateCardSelect(){
+  const sel = document.getElementById('cardSelect');
+  sel.innerHTML = '';
+  deck.forEach(c=>{let opt=document.createElement('option');opt.value=c;opt.text=c;sel.add(opt);});
+}
+function addPlayer(){
+  let name = document.getElementById('playerName').value;
+  let chips = +document.getElementById('playerChips').value;
+  if(!name||chips<0)return;
+  players.push({name,chips,hand:[]});
+  redrawPlayers(); updateAssignTo();
+}
+function redrawPlayers(){
+  const tbl = document.getElementById('playersTable');
+  tbl.innerHTML = '<tr><th>#</th><th>Imię</th><th>Żetony</th><th>Akcje</th></tr>';
+  players.forEach((p,i)=>{
+    let row=tbl.insertRow();
+    row.insertCell().innerText=i+1;
+    row.insertCell().innerText=p.name;
+    row.insertCell().innerText=p.chips;
+    let act=row.insertCell();
+    let btn1=document.createElement('button');
+    btn1.innerText='➖';btn1.onclick=()=>{p.chips--;redrawPlayers();}
+    let btn2=document.createElement('button');
+    btn2.innerText='➕';btn2.onclick=()=>{p.chips++;redrawPlayers();}
+    act.append(btn1,btn2);
+  });
+}
+function updateAssignTo(){
+  const sel = document.getElementById('assignTo');
+  sel.innerHTML = '<option value="board">Stół</option>';
+  players.forEach((p,i)=>{let opt=document.createElement('option');opt.value=i;opt.text=p.name;sel.add(opt);});
+}
+function dealCard(){
+  const c = document.getElementById('cardSelect').value;
+  const t = document.getElementById('assignTo').value;
+  deck = deck.filter(x=>x!==c);
+  if(t==='board'){board.push(c);
+    document.getElementById('boardCards').innerText='Karty na stole: '+board.join(', ');
+  } else {players[t].hand.push(c);
+    redrawHands();
+  }
+  updateCardSelect();
+}
+function redrawHands(){
+  const ul=document.getElementById('playerHands');
+  ul.innerHTML='';
+  players.forEach(p=>{
+    ul.innerHTML+=`<li>${p.name}: ${p.hand.join(', ')}</li>`;
+  });
+}
+function saveRound(){
+  const d=document.getElementById('roundDesc').value;
+  if(!d)return;
+  rounds.push(d);
+  const ul=document.getElementById('roundHistory');
+  ul.innerHTML = rounds.map(r=>'<li>'+r+'</li>').join('');
+  document.getElementById('roundDesc').value='';
+}
+initDeck();
+</script>
+</body>
+</html>
